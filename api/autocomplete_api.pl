@@ -70,11 +70,14 @@ ac_expand_hit(hit(R,P,L,[]),
 	all_literal_propvalues(R, skos:definition, Definitions).
 
 
-% Fix me: need to take care of preferred languages here
 all_literal_propvalues(R,P,Definitions) :-
-	findall(Definition,
+	findall(json([Lang=Definition]),
 		(   rdf_has(R, P, DefLit),
-		    literal_text(DefLit,Definition)
+		    literal_text(DefLit,Definition),
+		    (	DefLit = literal(lang(Lang, _))
+		    ->	true
+		    ;	Lang=lang_undefined
+		    )
 		), Definitions).
 
 
