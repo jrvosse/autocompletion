@@ -4,18 +4,10 @@
 	  ]).
 
 :- use_module(library('semweb/rdf_db')).
-:- use_module(library('semweb/rdfs')).
-:- use_module(library(semweb/rdf_label)).
 
 %:- use_module(serql(rdf_optimise)).
 
-:- use_module(library(debug)).
 :- use_module(library(error)).
-:- use_module(library(option)).
-:- use_module(library(pairs)).
-:- use_module(library(lists)).
-:- use_module(library(assoc)).
-:- use_module(library(settings)).
 :- use_module(library(http/json_convert)).
 :- use_module(library(http/json)).
 

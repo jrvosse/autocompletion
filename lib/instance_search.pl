@@ -4,13 +4,8 @@
 	]).
 
 :- use_module(library('semweb/rdf_db')).
-:- use_module(library('semweb/rdfs')).
-:- use_module(library('semweb/rdf_label')).
-:- use_module(library('semweb/rdf_litindex.pl')).
-
 :- use_module(library(find_resource)).
 :- use_module(library(ac_filter)).
-:- use_module(library(ac_list_util)).
 
 /***************************************************
 * term search
