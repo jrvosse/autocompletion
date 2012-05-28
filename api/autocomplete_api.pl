@@ -29,13 +29,20 @@ http_autocomplete(Request) :-
 				 default(prefix),
 				 description('String matching method')
 				]),
+			 labelrank(LabelRankingAtom,
+				   [atom,
+				    default('[]'),
+				    description('Property/value pairs ranking the labels, see instance_search/3')
+				   ]),
 			 filter(Filter,
 				[json_filter,
 				 default([]),
 				 description('JSON object specifying a restriction on the results')])
 			]),
+	term_to_atom(LabelRankingList, LabelRankingAtom),
 	Options = [match(Method),
-		   filter(Filter)],
+		   filter(Filter),
+		   property(LabelRankingList)],
 	instance_search(Query, Hits0, Options),
 	length(Hits0, TotalNumberOfResults),
 	list_offset(Hits0, Offset, Hits1),
