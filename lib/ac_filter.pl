@@ -88,7 +88,7 @@ filter(prop(P, V), R, Goal) :- !,
 	;   Goal = rdf_has(R, P, V)
 	).
 filter(reachable(TransP, C), R,	Goal) :- !,
-	Goal = rdf_reachable(R, TransP, C, 4, _).
+	Goal = rdf_reachable(R, TransP, C, 10, _).
 filter(reachable(P, TransP, C), R, Goal) :- !,
 	Goal = ( rdf_has(R, P, V),
 		 rdf_reachable(V, TransP, C)
