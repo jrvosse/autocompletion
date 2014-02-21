@@ -56,7 +56,8 @@ filter_to_conj_goal([Filter|T], R, (Goal,Rest)) :-
 
 filter_to_disj_goal([Filter], R, Goal) :- !,
 	filter(Filter, R, Goal).
-filter_to_disj_goal([Filter|T], R, (Goal;Rest)) :-
+filter_to_disj_goal([Filter0|T], R, (Goal;Rest)) :-
+	rdf_global_term(Filter0, Filter),
 	filter(Filter, R, Goal),
 	filter_to_disj_goal(T, R, Rest).
 
