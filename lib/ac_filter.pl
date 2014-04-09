@@ -1,4 +1,4 @@
-:- module(filter,
+:- module(acfilter,
 	  [ target_goal/3,            % +Goal, +R, +Options
 	    filter_to_goal/3	      % +FilterList, +R, -Goal
 	  ]).
