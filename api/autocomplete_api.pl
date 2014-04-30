@@ -62,6 +62,7 @@ http_autocomplete(Request) :-
 
 ac_expand_hit(hit(R,P,L,[]),
 	      hit(R,P,L,json([altLabels=Labels,
+	      		      images=Images,
 			      scopeNotes=ScopeNotes,
 			      definitions=Definitions,
 			      broader=Broader,
@@ -72,6 +73,8 @@ ac_expand_hit(hit(R,P,L,[]),
 	findall(B, rdf_has(R, skos:broader,  B), Broader),
 	findall(N, rdf_has(R, skos:narrower, N), Narrower),
 	findall(Rl,rdf_has(R, skos:related, Rl), Related),
+	findall(Im,rdf_has(R, foaf:depiction, Im), Images),
+
 
 	all_literal_propvalues(R, skos:scopeNote, ScopeNotes),
 	all_literal_propvalues(R, skos:definition, Definitions).
