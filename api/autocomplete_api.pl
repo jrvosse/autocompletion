@@ -60,25 +60,41 @@ http_autocomplete(Request) :-
 * expand with extra display info
 ***************************************************/
 
-ac_expand_hit(hit(R,P,L,[]),
-	      hit(R,P,L,json([altLabels=Labels,
-	      		      images=Images,
+ac_expand_hit(hit(R,P,_Label,[]),
+	      hit(R,P,MainLabel,json([altLabels=Labels,
+			      images=Images,
 			      scopeNotes=ScopeNotes,
 			      definitions=Definitions,
+			      notations=Notations,
 			      broader=Broader,
 			      narrower=Narrower,
 			      related=Related
 			     ]))) :-
 	all_labels(R,Labels),
+	notation_ish(R,MainLabel),
+	findall(N, rdf_has(R, skos:notation,  N), Notations),
 	findall(B, rdf_has(R, skos:broader,  B), Broader),
 	findall(N, rdf_has(R, skos:narrower, N), Narrower),
 	findall(Rl,rdf_has(R, skos:related, Rl), Related),
 	findall(Im,rdf_has(R, foaf:depiction, Im), Images),
 
-
 	all_literal_propvalues(R, skos:scopeNote, ScopeNotes),
 	all_literal_propvalues(R, skos:definition, Definitions).
 
+%%      notation_ish(Concept, NotationIsh) is det.
+%%
+%%       Unify NotationIsh with a label extend by (notation).
+%%       For notation, use the skos:notation or dc/dcterms:identifier
+notation_ish(Concept, NotationIsh) :-
+	rdf_display_label(Concept, Label),
+	(   (rdf(Concept, skos:notation, N)
+	    ;   rdf_has(Concept, skos:notation, N)
+	    ;   rdf_has(Concept, dc:identifier, N)
+	    )
+	->  literal_text(N, LT),
+	    format(atom(NotationIsh), '~w (~w)', [Label, LT])
+	;   NotationIsh = Label
+	).
 
 all_literal_propvalues(R,P,Definitions) :-
 	findall(json([Lang=Definition]),
