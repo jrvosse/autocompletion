@@ -1,18 +1,17 @@
 :- module(autocomplete_api, []).
 
+:- use_module(library(apply)).
 :- use_module(library(http/http_dispatch)).
 :- use_module(library(http/http_parameters)).
 :- use_module(library(http/http_json)).
-:- use_module(library(http/json_convert)).
+
+:- use_module(library(skos/util)).
+:- use_module(library(skos/json)).
 
 :- use_module(library('semweb/rdf_db')).
-:- use_module(library('semweb/rdf_label')).
 
 :- use_module(library(ac_list_util)).
 :- use_module(library(instance_search)).
-
-:- rdf_meta
-	all_literal_propvalues(r, r, -).
 
 :- http_handler(api(autocomplete), http_autocomplete, [js(true)]).
 
@@ -48,12 +47,8 @@ http_autocomplete(Request) :-
 	list_offset(Hits0, Offset, Hits1),
 	list_limit(Hits1, Limit, Hits2, _),
         maplist(ac_expand_hit, Hits2,Hits),
-	prolog_to_json(Hits, JSON),
-	reply_json(json([totalNumberOfResults(TotalNumberOfResults),
-			 results(JSON)])).
-
-:- json_object
-	hit(uri:uri, property:atom, label:atom, info:_).
+	reply_json(json{totalNumberOfResults:TotalNumberOfResults,
+			results:Hits}).
 
 
 /***************************************************
@@ -61,55 +56,28 @@ http_autocomplete(Request) :-
 ***************************************************/
 
 ac_expand_hit(hit(R,P,_Label,[]),
-	      hit(R,P,MainLabel,json([altLabels=Labels,
-			      images=Images,
-			      scopeNotes=ScopeNotes,
-			      definitions=Definitions,
-			      notations=Notations,
-			      broader=Broader,
-			      narrower=Narrower,
-			      related=Related
-			     ]))) :-
-	all_labels(R,Labels),
-	notation_ish(R,MainLabel),
+	      json{uri:R,
+		   property:P,
+		   label:MainLabel,
+		   info: info{altLabels:Labels,
+			      images:Images,
+			      scopeNotes:ScopeNotes,
+			      definitions:Definitions,
+			      notations:Notations,
+			      broader:Broader,
+			      narrower:Narrower,
+			      related:Related
+			     }
+		  }) :-
+	skos_all_labels(R,Labels),
+	skos_notation_ish(R,MainLabel),
+	skos_related_concepts(R, Related),
 	findall(N, rdf_has(R, skos:notation,  N), Notations),
 	findall(B, rdf_has(R, skos:broader,  B), Broader),
 	findall(N, rdf_has(R, skos:narrower, N), Narrower),
-	findall(Rl,rdf_has(R, skos:related, Rl), Related),
 	findall(Im,rdf_has(R, foaf:depiction, Im), Images),
 
-	all_literal_propvalues(R, skos:scopeNote, ScopeNotes),
-	all_literal_propvalues(R, skos:definition, Definitions).
-
-%%      notation_ish(Concept, NotationIsh) is det.
-%%
-%%       Unify NotationIsh with a label extend by (notation).
-%%       For notation, use the skos:notation or dc/dcterms:identifier
-notation_ish(Concept, NotationIsh) :-
-	rdf_display_label(Concept, Label),
-	(   (rdf(Concept, skos:notation, N)
-	    ;   rdf_has(Concept, skos:notation, N)
-	    ;   rdf_has(Concept, dc:identifier, N)
-	    )
-	->  literal_text(N, LT),
-	    format(atom(NotationIsh), '~w (~w)', [Label, LT])
-	;   NotationIsh = Label
-	).
-
-all_literal_propvalues(R,P,Definitions) :-
-	findall(json([Lang=Definition]),
-		(   rdf_has(R, P, DefLit),
-		    literal_text(DefLit,Definition),
-		    (	DefLit = literal(lang(Lang, _))
-		    ->	true
-		    ;	Lang=lang_undefined
-		    )
-		), Definitions).
+	json_all_literal_propvalues(R, skos:scopeNote, ScopeNotes),
+	json_all_literal_propvalues(R, skos:definition, Definitions).
 
 
-all_labels(R,Labels) :-
-	findall(AltLabel, (rdf_label(R,Lit),
-			   literal_text(Lit, AltLabel)
-			  ),
-		Labels0),
-	sort(Labels0,Labels).
