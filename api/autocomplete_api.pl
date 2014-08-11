@@ -72,11 +72,11 @@ ac_expand_hit(hit(R,P,_Label,[]),
 	skos_all_labels(R,Labels),
 	skos_notation_ish(R,MainLabel),
 	skos_related_concepts(R, Related),
-	findall(N, rdf_has(R, skos:notation,  N), Notations),
 	findall(B, rdf_has(R, skos:broader,  B), Broader),
 	findall(N, rdf_has(R, skos:narrower, N), Narrower),
 	findall(Im,rdf_has(R, foaf:depiction, Im), Images),
 
+	json_all_literal_propvalues(R, skos:notation, Notations),
 	json_all_literal_propvalues(R, skos:scopeNote, ScopeNotes),
 	json_all_literal_propvalues(R, skos:definition, Definitions).
 
