@@ -21,8 +21,15 @@ http_autocomplete(Request) :-
 			   []),
 			 limit(Limit,
 			       [default(10)]),
+			 /* FIX ME
 			 offset(Offset,
 				[default(0)]),
+			 */
+			 tokenized(Tokenized,
+				   [ float,
+				     default(0.5),
+				     description('Ratio of tokenized versus pure prefix search results')
+				   ]),
 			 method(Method,
 				[one_of([prefix,stem,exact]),
 				 default(prefix),
@@ -42,10 +49,20 @@ http_autocomplete(Request) :-
 	Options = [match(Method),
 		   filter(Filter),
 		   property(LabelRankingList)],
-	instance_search(Query, Hits0, Options),
-	length(Hits0, TotalNumberOfResults),
-	list_offset(Hits0, Offset, Hits1),
-	list_limit(Hits1, Limit, Hits2, _),
+	instance_search(Query, HitsPrefix,    [tokenize(false) | Options]),
+	instance_search(Query, HitsTokenized, [tokenize(true) | Options]),
+	length(HitsPrefix, NrHitsPrefix),
+	length(HitsTokenized, NrHitsTokenized),
+	TotalNumberOfResults is NrHitsPrefix + NrHitsTokenized,
+
+	FirstHalf is min(floor(Limit/(1 -Tokenized)), NrHitsPrefix),
+	SecondHalf is Limit - FirstHalf,
+
+	% list_offset(Hits0, Offset, Hits1),
+
+	list_limit(HitsPrefix, FirstHalf, PrefixHits, _),
+	list_limit(HitsTokenized, SecondHalf,TokenizedHits, _),
+	append([PrefixHits, TokenizedHits], Hits2),
         maplist(ac_expand_hit, Hits2,Hits),
 	reply_json(json{totalNumberOfResults:TotalNumberOfResults,
 			results:Hits}).
