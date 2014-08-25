@@ -8,7 +8,8 @@
 :- use_module(library(skos/util)).
 :- use_module(library(skos/json)).
 
-:- use_module(library('semweb/rdf_db')).
+:- use_module(library(semweb/rdf_db)).
+:- use_module(library(semweb/rdf_label)).
 
 :- use_module(library(ac_list_util)).
 :- use_module(library(instance_search)).
@@ -21,10 +22,6 @@ http_autocomplete(Request) :-
 			   []),
 			 limit(Limit,
 			       [default(10)]),
-			 /* FIX ME
-			 offset(Offset,
-				[default(0)]),
-			 */
 			 tokenized(Tokenized,
 				   [ float,
 				     default(0.5),
@@ -55,15 +52,14 @@ http_autocomplete(Request) :-
 	length(HitsTokenized, NrHitsTokenized),
 	TotalNumberOfResults is NrHitsPrefix + NrHitsTokenized,
 
-	FirstHalf is min(floor(Limit/(1 -Tokenized)), NrHitsPrefix),
+	FirstHalf is min(floor(Limit*(1-Tokenized)), NrHitsPrefix),
 	SecondHalf is Limit - FirstHalf,
-
-	% list_offset(Hits0, Offset, Hits1),
 
 	list_limit(HitsPrefix, FirstHalf, PrefixHits, _),
 	list_limit(HitsTokenized, SecondHalf,TokenizedHits, _),
-	append([PrefixHits, TokenizedHits], Hits2),
-        maplist(ac_expand_hit, Hits2,Hits),
+	append([PrefixHits, TokenizedHits], BothHits),
+	sort(BothHits, Dedup), % FIXME, this breaks the order :-)
+        maplist(ac_expand_hit(Query), Dedup, Hits),
 	reply_json(json{totalNumberOfResults:TotalNumberOfResults,
 			results:Hits}).
 
@@ -72,9 +68,10 @@ http_autocomplete(Request) :-
 * expand with extra display info
 ***************************************************/
 
-ac_expand_hit(hit(R,P,_Label,[]),
+ac_expand_hit(Query, hit(R,P,Label,[]),
 	      json{uri:R,
 		   property:P,
+		   match: Label,
 		   label:MainLabel,
 		   info: info{altLabels:Labels,
 			      images:Images,
@@ -86,8 +83,18 @@ ac_expand_hit(hit(R,P,_Label,[]),
 			      related:Related
 			     }
 		  }) :-
+	rdf_display_label(R, DisplayLabel),
+	skos_notation_ish(R, NotationLabel),
+	(   (   sub_atom(NotationLabel, _ ,_, _, Query)
+	    ;	sub_atom(NotationLabel, _, _, _, Label)
+	    ;	DisplayLabel == Label
+	    )
+	->  MainLabel = NotationLabel
+	;   atomic_list_concat([Label, ': ', NotationLabel], MainLabel)
+	),
+
 	skos_all_labels(R,Labels),
-	skos_notation_ish(R,MainLabel),
+
 	findall(Rel, skos_related_concept(R, Rel), Related),
 	findall(Bro, skos_parent_child(Bro, R), Broader),
 	findall(Nar, skos_parent_child(R, Nar), Narrower),
