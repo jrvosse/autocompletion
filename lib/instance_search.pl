@@ -3,7 +3,7 @@
 
 	]).
 
-:- use_module(library('semweb/rdf_db')).
+:- use_module(library(semweb/rdf_db)).
 :- use_module(library(find_resource)).
 :- use_module(library(ac_filter)).
 
@@ -41,9 +41,10 @@ instance_search(Query, Hits, Options) :-
 label_list([], LabelList) :- !,
 	rdf_equal(rdfs:label, Label),
 	rdf_equal(skos:prefLabel, PrefLabel),
-	LabelList = [
-		PrefLabel-0,
-		Label-1
+	rdf_equal(skos:notation, Notation),
+	LabelList = [Notation - 0,
+		     PrefLabel - 1,
+		     Label-2
 	].
 label_list(Property, LabelList) :-
 	atom(Property), !,
