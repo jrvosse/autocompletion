@@ -3,14 +3,17 @@
 	    filter_to_goal/3	      % +FilterList, +R, -Goal
 	  ]).
 
-:- use_module(library('semweb/rdf_db')).
-
-%:- use_module(serql(rdf_optimise)).
-
 :- use_module(library(error)).
+
 :- use_module(library(http/json_convert)).
 :- use_module(library(http/json)).
+:- use_module(library('semweb/rdf_db')).
 
+:- multifile
+        cliopatria:in_scheme/2.  % filter hook
+
+:- public
+	acfilter:in_scheme/2.    % predicate calling hook above
 
 %%	target_goal(+Goal, +R, -URI)
 %
@@ -81,8 +84,7 @@ filter(type(Class), R, Goal) :- !,
 		   )
 	).
 filter(scheme(Scheme), R, Goal) :- !,
-	rdf_equal(P, skos:inScheme),
-	Goal = rdf(R, P, Scheme).
+	Goal = acfilter:in_scheme(R, Scheme).
 filter(prop(P, V), R, Goal) :- !,
 	(   P = all
 	->  Goal = rdf_has(R, _, V)
@@ -136,6 +138,12 @@ filter(group(P, [Value]), R, Goal) :- !,
 filter(Filter, _, _) :-
 	domain_error(filter, Filter).
 
+in_scheme(Concept, Scheme) :-
+	catch(cliopatria:in_scheme(Concept, Scheme), _, fail),
+	!.
+in_scheme(Concept, Scheme) :-
+	rdf_equal(P, skos:inScheme),
+	rdf(Concept, P, Scheme).
 
 http:convert_parameter(json_filter, Atom, Term) :-
 	atom_json_term(Atom, JSON, []),
